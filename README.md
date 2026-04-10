@@ -151,8 +151,10 @@ pip install scanpy anndata scvi-tools scib-metrics
 
 ## Data Availability
 
-Raw count matrices and processed AnnData/Seurat objects are deposited at:
-- **Zenodo**: [link]
+> **Note:** Data deposit links will be added upon paper acceptance.
+
+Raw count matrices and processed AnnData/Seurat objects will be deposited at:
+- **Zenodo**: *(link to be added upon acceptance)*
 
 ---
 
