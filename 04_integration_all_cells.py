@@ -10,7 +10,7 @@ Workflow position:
   02_data_merge_and_filter.py → [THIS FILE] → 06_h5ad_to_seurat.R
 
 Input:
-  merged_a17_hit1.h5ad   — created by 02_data_merge_and_filter.py
+  all_cells_raw.h5ad   — created by 02_data_merge_and_filter.py
   (all annotated cells, low-quality cells removed, MT genes removed,
    raw counts in layers["counts"], log-normalized in layers["lognorm"])
 
@@ -36,11 +36,11 @@ Integration methods (6 total, all benchmarked):
 
 Benchmarking: scib-metrics (Luecken et al. 2022, Nat Methods)
   Total = 0.4 × Batch correction + 0.6 × Bio conservation
-  Results → scib_results_raw.csv / scib_results_minmax.csv (Supplementary Tables 3, 4)
+  Results → scib_results_raw.csv / scib_results_minmax.csv (Supplementary Tables 4, 5)
 
 Output:
-  merged_a17_hit1_scib_50pc2000g.h5ad       — all embeddings, X = lognorm
-  merged_a17_hit1_metadata.csv              — obs metadata (for 06_h5ad_to_seurat.R)
+  all_cells_integrated.h5ad       — all embeddings, X = lognorm
+  all_cells_metadata.csv              — obs metadata (for 06_h5ad_to_seurat.R)
   scib_a17_hit1_50pc2000g/scib_results_*.csv — benchmark results
 
 Dependencies: scanpy, scvi-tools, bbknn, scanorama, harmonypy, scib-metrics
@@ -69,9 +69,9 @@ sc.logging.print_header()
 BASE_DIR       = "/mctp/share/users/hanbyul/projects/human_prostate_sc/cellranger_7.1/17datasets/python_final"
 PLOT_DIR       = os.path.join(BASE_DIR, "scib_a17_hit1_50pc2000g")
 CHECKPOINT_DIR = os.path.join(BASE_DIR, "checkpoints_a17_hit1_50pc2000g")
-H5AD_IN        = os.path.join(BASE_DIR, "merged_a17_hit1.h5ad")
-H5AD_OUT       = os.path.join(BASE_DIR, "merged_a17_hit1_scib_50pc2000g.h5ad")
-META_CSV_OUT   = os.path.join(BASE_DIR, "merged_a17_hit1_metadata.csv")   # for 06_h5ad_to_seurat.R
+H5AD_IN        = os.path.join(BASE_DIR, "all_cells_raw.h5ad")
+H5AD_OUT       = os.path.join(BASE_DIR, "all_cells_integrated.h5ad")
+META_CSV_OUT   = os.path.join(BASE_DIR, "all_cells_metadata.csv")   # for 06_h5ad_to_seurat.R
 
 os.makedirs(PLOT_DIR,       exist_ok=True)
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
@@ -123,10 +123,10 @@ def get_palette(adata, key, col_dict):
 
 # =============================================================================
 # Step 1: Load and prepare
-# (merged_a17_hit1.h5ad already has counts/lognorm layers from step 02)
+# (all_cells_raw.h5ad already has counts/lognorm layers from step 02)
 # =============================================================================
 print("\n" + "="*60)
-print("Step 1: Load merged_a17_hit1.h5ad")
+print("Step 1: Load all_cells_raw.h5ad")
 print("="*60)
 
 ckpt = load_checkpoint("after_load")
@@ -139,7 +139,7 @@ else:
 
     # Confirm layers
     if "counts" not in adata.layers:
-        # If loaded from merged_a17_hit1.h5ad which has X = raw counts
+        # If loaded from all_cells_raw.h5ad which has X = raw counts
         adata.layers["counts"] = adata.X.copy()
         sc.pp.normalize_total(adata, target_sum=1e4)
         sc.pp.log1p(adata)
@@ -342,7 +342,7 @@ fig.savefig(os.path.join(PLOT_DIR, "umap_all_methods.png"), dpi=100, bbox_inches
 plt.close("all")
 
 # =============================================================================
-# Step 9: scib-metrics benchmarking (Figure 5a, c; Supplementary Tables 3, 4)
+# Step 9: scib-metrics benchmarking (Figure 5a, c; Supplementary Tables 4, 5)
 # =============================================================================
 print("\n" + "="*60)
 print("Step 9: scib-metrics benchmark (Figure 5a, c)")
@@ -372,8 +372,8 @@ df_scaled = rename_methods(bm.get_results(min_max_scale=True))
 
 df_raw.to_csv(   os.path.join(PLOT_DIR, "scib_results_raw.csv"))
 df_scaled.to_csv(os.path.join(PLOT_DIR, "scib_results_minmax.csv"))
-print("Saved: scib_results_raw.csv  (Supplementary Table 3)")
-print("Saved: scib_results_minmax.csv  (Supplementary Table 4)")
+print("Saved: scib_results_raw.csv  (Supplementary Table 4)")
+print("Saved: scib_results_minmax.csv  (Supplementary Table 5)")
 print(df_scaled)
 
 for scale, tag in [(False, "_raw"), (True, "_minmax")]:

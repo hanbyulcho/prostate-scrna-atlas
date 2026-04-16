@@ -18,12 +18,12 @@
 #   alongside the Python-native methods (Scanorama, BBKNN, scVI, scANVI).
 #
 # Input:
-#   merged_a17_STRIPPED_lum_v1_noNoGroup.h5ad — luminal stripped h5ad (from step 02)
-#   obs_metadata_lum_v1_noNoGroup.csv          — full obs metadata (from step 02)
+#   luminal_cells_raw_stripped.h5ad — luminal stripped h5ad (from step 02)
+#   luminal_cells_obs_prefilter.csv          — full obs metadata (from step 02)
 #
 # Output:
-#   seu_lum_v1_noNoGroup.rds   — full Seurat object with all embeddings
-#   seu_lum_v1_noNoGroup.h5ad  — h5ad with CCA/RPCA/Harmony embeddings + UMAPs
+#   luminal_cells_raw.rds   — full Seurat object with all embeddings
+#   luminal_cells_raw.h5ad  — h5ad with CCA/RPCA/Harmony embeddings + UMAPs
 #                                → imported by 05_integration_luminal_cells.py
 #
 # Integration methods run here (Seurat v5 IntegrateLayers):
@@ -251,8 +251,8 @@ run_integration <- function(seu, label, out_pdf, out_rds, out_h5ad) {
 # Run integration for luminal cells v1 (No_Group removed)
 # =============================================================================
 seu_v1 <- load_lum_seurat(
-  h5ad_file = "merged_a17_STRIPPED_lum_v1_noNoGroup.h5ad",
-  obs_csv   = "obs_metadata_lum_v1_noNoGroup.csv",
+  h5ad_file = "luminal_cells_raw_stripped.h5ad",
+  obs_csv   = "luminal_cells_obs_prefilter.csv",
   label     = "v1_noNoGroup"
 )
 
@@ -260,8 +260,8 @@ run_integration(
   seu      = seu_v1,
   label    = "v1_noNoGroup",
   out_pdf  = "umap_batch_lum_v1_noNoGroup.pdf",
-  out_rds  = "seu_lum_v1_noNoGroup.rds",
-  out_h5ad = "seu_lum_v1_noNoGroup.h5ad"
+  out_rds  = "luminal_cells_raw.rds",
+  out_h5ad = "luminal_cells_raw.h5ad"
 )
 
 rm(seu_v1); gc()

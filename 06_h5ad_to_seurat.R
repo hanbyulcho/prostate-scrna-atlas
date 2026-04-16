@@ -28,15 +28,15 @@
 #
 # Input files (from steps 04 and 05):
 #   All-cells (from 04_integration_all_cells.py):
-#     merged_a17_hit1_scib_50pc2000g_stripped.h5ad  — embeddings + expression
-#     merged_a17_hit1_metadata.csv                  — full obs metadata
+#     all_cells_integrated_stripped.h5ad  — embeddings + expression
+#     all_cells_metadata.csv                  — full obs metadata
 #   Luminal (from 05_integration_luminal_cells.py):
-#     seu_lum_v1_noNoGroup_scib_30pc3000g_stripped.h5ad  — embeddings + expression
-#     seu_lum_v1_noNoGroup_metadata.csv                  — full obs metadata
+#     luminal_cells_integrated_stripped.h5ad  — embeddings + expression
+#     luminal_cells_metadata.csv                  — full obs metadata
 #
 # Output files:
-#   merged_a17_hit1_scib_50pc2000g.rds         — all-cells Seurat RDS
-#   seu_lum_v1_noNoGroup_scib_30pc3000g.rds    — luminal Seurat RDS
+#   all_cells_integrated.rds         — all-cells Seurat RDS
+#   luminal_cells_integrated.rds    — luminal Seurat RDS
 #   (both saved into the scib working directory; used by 07_visualization.R)
 #
 # Dependencies: Seurat (v5), SeuratDisk
@@ -46,7 +46,7 @@ library(Seurat)
 library(SeuratDisk)
 
 # =============================================================================
-# Section 1 — All-cells: merged_a17_hit1_scib_50pc2000g
+# Section 1 — All-cells: all_cells_integrated
 # =============================================================================
 # Source: 04_integration_all_cells.py
 #   Integration parameters: 2,000 HVGs, 50 PCs, batch_key = Paper_ID_short,
@@ -61,7 +61,7 @@ message("\n=== All-cells: converting h5ad → Seurat RDS ===")
 
 # Step 1: Convert h5ad → h5seurat format (SeuratDisk intermediate)
 Convert(
-  "merged_a17_hit1_scib_50pc2000g_stripped.h5ad",
+  "all_cells_integrated_stripped.h5ad",
   dest     = "h5seurat",
   assay    = "RNA",
   overwrite = TRUE
@@ -71,7 +71,7 @@ Convert(
 #   Only loading the RNA assay (expression data + embeddings).
 #   obs metadata columns are empty at this stage; re-attached below.
 seu_allcells <- LoadH5Seurat(
-  "merged_a17_hit1_scib_50pc2000g_stripped.h5seurat",
+  "all_cells_integrated_stripped.h5seurat",
   assays = "RNA"
 )
 
@@ -82,7 +82,7 @@ message("  Reductions available: ", paste(names(seu_allcells@reductions), collap
 #   The CSV was exported by 04_integration_all_cells.py and contains all
 #   original annotation columns (cell type labels, batch info, QC metrics, etc.)
 cell_df <- read.csv(
-  "merged_a17_hit1_metadata.csv",
+  "all_cells_metadata.csv",
   row.names   = 1,
   check.names = FALSE
 )
@@ -94,13 +94,13 @@ message("  Metadata columns re-attached: ", ncol(cell_df))
 
 # Step 4: Upgrade schema and save RDS
 seu_allcells <- UpdateSeuratObject(seu_allcells)
-saveRDS(seu_allcells, "merged_a17_hit1_scib_50pc2000g.rds")
-message("  RDS saved: merged_a17_hit1_scib_50pc2000g.rds")
+saveRDS(seu_allcells, "all_cells_integrated.rds")
+message("  RDS saved: all_cells_integrated.rds")
 
 rm(seu_allcells); gc()
 
 # =============================================================================
-# Section 2 — Luminal cells: seu_lum_v1_noNoGroup_scib_30pc3000g
+# Section 2 — Luminal cells: luminal_cells_integrated
 # =============================================================================
 # Source: 05_integration_luminal_cells.py
 #   Integration parameters: 3,000 HVGs, 30 PCs, batch_key = Paper_ID_short,
@@ -117,7 +117,7 @@ message("\n=== Luminal cells: converting h5ad → Seurat RDS ===")
 
 # Step 1: Convert h5ad → h5seurat
 Convert(
-  "seu_lum_v1_noNoGroup_scib_30pc3000g_stripped.h5ad",
+  "luminal_cells_integrated_stripped.h5ad",
   dest      = "h5seurat",
   assay     = "RNA",
   overwrite = TRUE
@@ -125,7 +125,7 @@ Convert(
 
 # Step 2: Load h5seurat
 seu_lum <- LoadH5Seurat(
-  "seu_lum_v1_noNoGroup_scib_30pc3000g_stripped.h5seurat",
+  "luminal_cells_integrated_stripped.h5seurat",
   assays = "RNA"
 )
 
@@ -136,7 +136,7 @@ message("  Reductions available: ", paste(names(seu_lum@reductions), collapse = 
 #   Exported by 05_integration_luminal_cells.py; contains etsgroup, Group,
 #   GleasonGrade, Paper_ID_short, and all other annotation columns.
 cell_df <- read.csv(
-  "seu_lum_v1_noNoGroup_metadata.csv",
+  "luminal_cells_metadata.csv",
   row.names   = 1,
   check.names = FALSE
 )
@@ -147,12 +147,12 @@ message("  Metadata columns re-attached: ", ncol(cell_df))
 
 # Step 4: Upgrade schema and save RDS
 seu_lum <- UpdateSeuratObject(seu_lum)
-saveRDS(seu_lum, "seu_lum_v1_noNoGroup_scib_30pc3000g.rds")
-message("  RDS saved: seu_lum_v1_noNoGroup_scib_30pc3000g.rds")
+saveRDS(seu_lum, "luminal_cells_integrated.rds")
+message("  RDS saved: luminal_cells_integrated.rds")
 
 rm(seu_lum); gc()
 
 cat("\nDone. → Next: run 07_visualization.R\n")
 cat("Outputs:\n")
-cat("  python_final/merged_a17_hit1_scib_50pc2000g.rds\n")
-cat("  python_final/032025_scib/seu_lum_v1_noNoGroup_scib_30pc3000g.rds\n")
+cat("  python_final/all_cells_integrated.rds\n")
+cat("  python_final/032025_scib/luminal_cells_integrated.rds\n")

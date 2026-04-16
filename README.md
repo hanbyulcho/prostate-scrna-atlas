@@ -49,16 +49,16 @@ The analysis runs in 7 sequential steps across R and Python:
 - Applies per-sample QC filters: ≥250 genes, ≥500 UMIs, <20% mitochondrial reads
 - Detects doublets with **scDblFinder**
 - Generates pseudobulk profiles per cluster and annotates cell types using **SingleR** with a prostate-specific reference (CellAnno + Henry et al.)
-- Exports `metacomb_17data_final.csv` — the master cell annotation table used by all downstream steps
+- Exports `all_cells_prefilter_annotation.csv` — the master cell annotation table used by all downstream steps
 
 ### `02_data_merge_and_filter.py`
 **Language:** Python | **Key packages:** scanpy, anndata
 
 - Loads raw 10x `.h5` files per sample into AnnData objects (includes special HTO demultiplexing for Wong 2022 / P02)
-- Computes QC metrics (nCount, nFeature, pct_mt) and saves `QC_metrics_raw_prefilter.csv`
+- Computes QC metrics (nCount, nFeature, pct_mt) and saves `QC_metrics_prefilter.csv`
 - Concatenates all samples → `all_studies_combined.h5ad`
-- Merges R annotation from `metacomb_17data_final.csv`, filters to annotated cells → `merged_a17.h5ad`
-- Removes low-quality / unknown cell types and MT genes → **`merged_a17_hit1.h5ad`** (main all-cells input)
+- Merges R annotation from `all_cells_prefilter_annotation.csv`, filters to annotated cells → `merged_a17.h5ad`
+- Removes low-quality / unknown cell types and MT genes → **`all_cells_raw.h5ad`** (main all-cells input)
 - Subsets to luminal/epithelial cells → stripped h5ad + obs CSV for R batch correction
 
 ### `03_batch_correction_luminal.R`
@@ -72,31 +72,31 @@ Runs Seurat v5 `IntegrateLayers()` for three methods on luminal cells:
 | **RPCA** | `RPCAIntegration` | `integrated.rpca` / `umap.rpca` |
 | **Harmony** | `HarmonyIntegration` | `harmony` / `umap.harmony` |
 
-Uses `DietSeurat` + `SaveH5Seurat` + `Convert` to export **`seu_lum_v1_noNoGroup.h5ad`** — a single h5ad carrying all three sets of embeddings alongside raw/lognorm expression.
+Uses `DietSeurat` + `SaveH5Seurat` + `Convert` to export **`luminal_cells_raw.h5ad`** — a single h5ad carrying all three sets of embeddings alongside raw/lognorm expression.
 
 ### `04_integration_all_cells.py`
 **Language:** Python | **Key packages:** scanpy, scvi-tools, scib-metrics
 
-- Input: `merged_a17_hit1.h5ad` (754,195 cells)
+- Input: `all_cells_raw.h5ad` (754,195 cells)
 - Parameters: **2,000 HVGs, 50 PCs**, `batch_key = Paper_ID_short`, `label_key = final_hit1_group_detailed`
 - Runs and benchmarks 6 integration methods:
 
 | Method | Type | scib Total |
 |--------|------|-----------|
-| Unintegrated (PCA) | Baseline | — |
-| Harmony | Embedding | — |
-| Scanorama | Embedding | — |
-| BBKNN | Graph | — |
-| scVI | Deep learning | — |
+| Unintegrated (PCA) | Baseline | 0.48 |
+| Harmony | Embedding | 0.69 |
+| Scanorama | Embedding | 0.40 |
+| BBKNN | Graph | 0.33 |
+| scVI | Deep learning | 0.41 |
 | **scANVI** | Deep learning | **0.74** ✓ |
 
 - Exports scib benchmark tables → **Supplementary Tables 4 & 5**
-- Saves `merged_a17_hit1_scib_50pc2000g_stripped.h5ad` + `merged_a17_hit1_metadata.csv`
+- Saves `all_cells_integrated_stripped.h5ad` + `all_cells_metadata.csv`
 
 ### `05_integration_luminal_cells.py`
 **Language:** Python | **Key packages:** scanpy, scvi-tools, scib-metrics
 
-- Input: `seu_lum_v1_noNoGroup.h5ad` (from step 03, carrying CCA/RPCA/Harmony embeddings)
+- Input: `luminal_cells_raw.h5ad` (from step 03, carrying CCA/RPCA/Harmony embeddings)
 - Parameters: **3,000 HVGs, 30 PCs**, `batch_key = Paper_ID_short`, `label_key = etsgroup`
 - Step 1: Recovers lognorm from Seurat's raw slot; back-computes pseudo-counts for scVI
 - Step 2: Renames Seurat embedding keys (e.g. `X_integrated.cca` → `X_cca`)
@@ -104,13 +104,13 @@ Uses `DietSeurat` + `SaveH5Seurat` + `Convert` to export **`seu_lum_v1_noNoGroup
 
 | Method | Source | scib Total |
 |--------|--------|-----------|
-| Unintegrated | Python | — |
-| CCA | R (Seurat) | — |
-| RPCA | R (Seurat) | — |
-| Harmony | R (Seurat) | — |
-| Scanorama | Python | — |
-| BBKNN | Python | — |
-| scVI | Python | — |
+| Unintegrated | Python | 0.46 |
+| CCA | R (Seurat) | 0.36 |
+| RPCA | R (Seurat) | 0.41 |
+| Harmony | R (Seurat) | 0.51 |
+| Scanorama | Python | 0.46 |
+| BBKNN | Python | 0.26 |
+| scVI | Python | 0.54 |
 | **scANVI** | Python | **0.78** ✓ |
 
 - Luminal ETS subgroups: Benign, BPH, ERG, ETV, nonETS, AR, NEPC, DN (AR−/NE−)
@@ -125,7 +125,7 @@ Converts the Python scib output h5ads back to Seurat RDS for R-based visualizati
 3. `AddMetaData()` — re-attach full obs metadata from companion CSV
 4. `UpdateSeuratObject()` + `saveRDS()`
 
-Output: `merged_a17_hit1_scib_50pc2000g.rds` and `seu_lum_v1_noNoGroup_scib_30pc3000g.rds`
+Output: `all_cells_integrated.rds` and `luminal_cells_integrated.rds`
 
 ### `07_visualization.R`
 **Language:** R | **Key packages:** Seurat v5, ggplot2, patchwork, ggrastr

@@ -12,22 +12,22 @@
 # What this script produces:
 #
 #   Section 1 — QC figures (Supplementary Figure 1a–d)
-#     Source data: QC_metrics_raw_prefilter.csv, qc_summary_forsupplementary.csv
+#     Source data: QC_metrics_prefilter.csv, QC_summary_sample_level.csv
 #     1a. Violin plots: nCount, nFeature, pct_mt across 17 studies (pre-filter)
 #     1b. Bar chart: cells before QC / after QC / singlets / after annotation QC
 #     1c. Stacked bar: cells removed at each filtering step
 #     1d. Doublet rate per sample (boxplot + jitter)
 #
 #   Section 2 — All-cells scANVI UMAP (Figure 1, Supplementary Figure 1b–c)
-#     Source: merged_a17_hit1_scib_50pc2000g.rds
+#     Source: all_cells_integrated.rds
 #     DimPlots colored by: cell type, study, Group, GleasonGrade
 #
 #   Section 3 — Luminal scANVI UMAP (Figure 2)
-#     Source: seu_lum_v1_noNoGroup_scib_30pc3000g.rds
+#     Source: luminal_cells_integrated.rds
 #     DimPlots colored by: etsgroup, Group, GleasonGrade, study
 #
 #   Section 4 — scANVI feature plots for luminal cells (Supplementary Figure 4d)
-#     Source: seu_lum_v1_noNoGroup_scib_30pc3000g.rds
+#     Source: luminal_cells_integrated.rds
 #     Genes: AR, ERG, ETV1, ETV4, SPINK1 + AR-TCGA score + NE-Beltran score
 #
 #   Section 5 — Pseudobulk bubble (dot) plots (Figure 4c–d)
@@ -133,7 +133,7 @@ comp_col <- c(
 
 # =============================================================================
 # Section 1 — QC Figures (Supplementary Figure 1)
-# Source: QC_metrics_raw_prefilter.csv and qc_summary_forsupplementary.csv
+# Source: QC_metrics_prefilter.csv and QC_summary_sample_level.csv
 # These CSVs are created by 02_data_merge_and_filter.py (Python, Part A) and
 # 01_QC_and_annotation.R (R, Part A — scDblFinder doublet counts).
 # =============================================================================
@@ -147,7 +147,7 @@ PY_FINAL <- file.path(BASE_DIR, "python_final")
 # Shows the distribution of nCount_RNA, nFeature_RNA, and pct_mt before any
 # cell filtering. Red dashed lines = QC thresholds (nCount ≥ 500, nFeature ≥ 250, mt < 20%).
 
-qc_cell <- read.csv(file.path(PY_FINAL, "QC_metrics_raw_prefilter.csv"), row.names = 1)
+qc_cell <- read.csv(file.path(PY_FINAL, "QC_metrics_prefilter.csv"), row.names = 1)
 qc_cell$Paper_ID    <- factor(qc_cell$Paper_ID, levels = paperorder)
 qc_cell$study_label <- factor(study_labels[as.character(qc_cell$Paper_ID)],
                                levels = study_labels[paperorder])
@@ -199,13 +199,13 @@ message("  Saved: SFig1a_QC_violin_prefilter.pdf")
 # Four stages: Before QC, After QC (thresholds), Singlets (doublets removed),
 # After annotation QC (lowqual/unknown cell types removed).
 
-qc_sum <- read.csv(file.path(PY_FINAL, "qc_summary_forsupplementary.csv"), row.names = 1)
+qc_sum <- read.csv(file.path(PY_FINAL, "QC_summary_sample_level.csv"), row.names = 1)
 qc_sum <- qc_sum[qc_sum$Exclude %in% "Include ", ]
 qc_sum[, c("Cells_After_QC", "Cells_Singlet", "Cells_before_QC")] <-
   lapply(qc_sum[, c("Cells_After_QC", "Cells_Singlet", "Cells_before_QC")], as.numeric)
 qc_sum$Study <- factor(qc_sum$Study, levels = paperorder)
 
-# Cells remaining after annotation QC (from merged_a17_hit1_scib_50pc2000g.rds)
+# Cells remaining after annotation QC (from all_cells_integrated.rds)
 # table(seu$ID) with only annotated (non-lowqual) cells
 cells_after_annot <- c(
   L001=580,  L002=5471, L003=1331, L004=3065, L005=2431, L006=5116,
@@ -336,13 +336,13 @@ message("  Saved: SFig1d_QC_doublet_rate.pdf")
 
 # =============================================================================
 # Section 2 — All-cells scANVI UMAP (Figure 1, Supplementary Figure 1b–c)
-# Source: merged_a17_hit1_scib_50pc2000g.rds (from step 06)
+# Source: all_cells_integrated.rds (from step 06)
 # scANVI UMAP stored as reduction "umap_scanvi"
 # =============================================================================
 
 message("\n=== Section 2: All-cells UMAPs ===")
 
-seu_all <- readRDS(file.path(PY_FINAL, "merged_a17_hit1_scib_50pc2000g.rds"))
+seu_all <- readRDS(file.path(PY_FINAL, "all_cells_integrated.rds"))
 scanvi_red_all <- "umap_scanvi"
 
 message("  Cells: ", ncol(seu_all), "  Reduction: ", scanvi_red_all)
@@ -387,7 +387,7 @@ rm(seu_all); gc()
 
 # =============================================================================
 # Section 3 — Luminal cells scANVI UMAP (Figure 2)
-# Source: seu_lum_v1_noNoGroup_scib_30pc3000g.rds (from step 06)
+# Source: luminal_cells_integrated.rds (from step 06)
 # scANVI UMAP stored as reduction "umap_scanvi"
 # ETS subgroups: Benign, BPH, ERG, ETV, nonETS, AR, NEPC, DN
 # =============================================================================
@@ -395,7 +395,7 @@ rm(seu_all); gc()
 message("\n=== Section 3: Luminal UMAPs ===")
 
 SCIB_DIR <- file.path(PY_FINAL, "032025_scib")
-seu_lum  <- readRDS(file.path(SCIB_DIR, "seu_lum_v1_noNoGroup_scib_30pc3000g.rds"))
+seu_lum  <- readRDS(file.path(SCIB_DIR, "luminal_cells_integrated.rds"))
 scanvi_red_lum <- "umap_scanvi"
 
 message("  Cells: ", ncol(seu_lum), "  Reduction: ", scanvi_red_lum)
@@ -439,7 +439,7 @@ message("  Saved: SFig_lum_study_umap.pdf")
 # =============================================================================
 # Section 4 — Feature plots: marker gene / signature expression on luminal UMAP
 #             (Supplementary Figure 4d)
-# Source: seu_lum_v1_noNoGroup_scib_30pc3000g.rds (already loaded above)
+# Source: luminal_cells_integrated.rds (already loaded above)
 #
 # Plots log-normalized expression of known ETS/AR/NE marker genes and
 # AR-TCGA / NE-Beltran module scores on the scANVI UMAP.
@@ -531,235 +531,3 @@ dev.off()
 message("  Saved: SFig4d_lum_featureplots.pdf")
 
 rm(seu_lum); gc()
-
-# =============================================================================
-# Section 5 — Pseudobulk bubble (dot) plots (Figure 4c–d)
-#
-# Uses pseudobulk-level Seurat object where each "cell" = one pseudobulk
-# sample from a given donor × ETS subgroup. FindAllMarkers identifies DE genes
-# between subgroups; DotPlot visualizes expression × fraction expressed.
-#
-# Comparisons:
-#   Primary PCa: Benign / nonETS / ERG / ETV (Figure 4c)
-#   mCRPC:       AR / NEPC / DN              (Figure 4d)
-#
-# Source: external pseudobulk RDS (generated separately from the single-cell
-# data using Seurat's AggregateExpression or a custom pseudobulk pipeline).
-# =============================================================================
-
-message("\n=== Section 5: Pseudobulk bubble plots ===")
-
-PSEUDO_RDS <- paste0(
-  "/mctp/share/users/hanbyul/projects/tm/human_prostate_sc/",
-  "lum_pseudolevel/correctmetapca10_new/seurat_all_allgroups_pca10_0320.rds"
-)
-
-if (!file.exists(PSEUDO_RDS)) {
-  warning("Pseudobulk RDS not found: ", PSEUDO_RDS, " — skipping Section 5")
-} else {
-  p1 <- readRDS(PSEUDO_RDS)
-  p1$etsgroup <- p1$group  # harmonize column name
-
-  message("  Loaded pseudobulk: ", ncol(p1), " samples")
-
-  # Known marker gene sets for each ETS subgroup
-  Benign          <- c("RLN1","RLN2","VGLL3","NKX3-1","MSMB","AZGP1","GSTP1")
-  Tumor           <- c("AMACR","PCA3","DLX1","HOXC6","SCHLAP1","FOLH1","EZH2","MKI67")
-  known_ETS_pos   <- c("ERG","TDRD1","DLX1","HOXC6","CRISP3","SOX9","EZH2",
-                        "MMP9","TFF3","CXCR4","GRPR","ETV1","ETV4","ETV5")
-  known_ETS_neg   <- c("SPINK1","ANPEP","RLN1","TFF3","EGFR",
-                        "KLK2","KLK3","FKBP5","NKX3-1","ACSL3")
-  spatial_ETV     <- c("NEFH","ETV1","KCNN4","SLC45A2","PLAT","ETV5","TWIST1","GRPR","FGF12","ETV4")
-  spatial_SPOP    <- c("SRARP","SHISA6","HSD17B6","GLB1L3","ALOX15B","SGCD","AZGP1","PHGR1",
-                        "FBXO27","ADAMTSL1","MT1G","TMEM184A","CRACR2B","TNFRSF19","FAM3B",
-                        "ARX","SOX14","CLDN8","SLC43A1","DACH2")
-  spatial_FOXA1   <- c("RLN1","SYCE1","NLRP9","PNLDC1","CEACAM20","HPGD","ARHGAP36",
-                        "ADGRG7","FBXL16","SLC51A","AATK","MUC13","TNNT1","RLN2",
-                        "SPESP1","GLYATL1","CHRNA7","CDX2","SLCO1A2","CA13")
-
-  known_markers <- unique(c(
-    Benign, Tumor, known_ETS_pos, known_ETS_neg,
-    spatial_ETV, spatial_SPOP, spatial_FOXA1,
-    AR_TCGA_genes, NE_Beltran_genes,
-    "AR","ERG","TDRD1","CRISP3","ETV1","ETV4","ETV5","GRPR",
-    "SYP","CHGA","CHGB","AURKA","MYCN","DNMT1","ENO2",
-    "RLN1","RLN2","MSMB","AZGP1","GSTP1","VGLL3"
-  ))
-
-  group_known_sets <- list(
-    Benign = Benign,
-    ERG    = c(known_ETS_pos),
-    ETV    = c(known_ETS_pos, spatial_ETV),
-    nonETS = c(known_ETS_neg, spatial_SPOP, spatial_FOXA1),
-    AR     = AR_TCGA_genes,
-    NEPC   = NE_Beltran_genes,
-    DN     = NE_Beltran_genes
-  )
-
-  # Regex to exclude poorly-annotated / lncRNA gene names
-  bad_gene_pattern <- "^(AC|AL|AP|BX|CR|CT|CU|FP|HG|KB|KI|LINC|LOC|MIR|MTCO|MTND|RF|RP|Z)[0-9]|\\.[0-9]+$"
-
-  # Smart top-gene picker: hard DE picks + known biology fills
-  pick_top <- function(markers_grp, known_genes, n_top, n_pool = 75, n_total) {
-    markers_grp <- markers_grp[!grepl(bad_gene_pattern, markers_grp$gene), ]
-    markers_grp <- markers_grp[order(-markers_grp$avg_log2FC), ]
-    top_de      <- head(markers_grp$gene, n_top)
-    pool        <- head(markers_grp$gene, n_pool)
-    from_known  <- setdiff(intersect(known_genes, pool), top_de)
-    combined    <- unique(c(top_de, from_known))
-    combined    <- head(combined, n_total)
-    if (length(combined) < n_total) {
-      extra    <- markers_grp$gene[!markers_grp$gene %in% combined]
-      combined <- c(combined, head(extra, n_total - length(combined)))
-    }
-    combined
-  }
-
-  # Core function: FindAllMarkers → DotPlot variants → save PDFs
-  make_bubble_plots <- function(seu, group_col, prefix,
-                                colmap           = comp_col,
-                                known_markers_vec = known_markers,
-                                grp_known_sets   = group_known_sets) {
-
-    Idents(seu) <- seu@meta.data[[group_col]]
-    groups_use  <- levels(seu@meta.data[[group_col]])
-
-    message("  >>> FindAllMarkers for: ", prefix)
-    markers <- FindAllMarkers(seu, only.pos = TRUE,
-                              min.pct = 0.10, logfc.threshold = 0.25, verbose = FALSE)
-    if (nrow(markers) == 0) {
-      message("  No markers found for ", prefix); return(invisible(NULL))
-    }
-
-    gene_cluster <- markers %>%
-      arrange(desc(avg_log2FC)) %>%
-      distinct(gene, .keep_all = TRUE) %>%
-      select(gene, cluster)
-
-    get_top <- function(n_total) {
-      n_top <- max(3, floor(n_total * 0.5))
-      per_group <- lapply(groups_use, function(grp) {
-        sub <- markers[markers$cluster == grp, , drop = FALSE]
-        if (nrow(sub) == 0) return(character(0))
-        known <- if (grp %in% names(grp_known_sets)) grp_known_sets[[grp]] else character(0)
-        pick_top(sub, known_genes = known, n_top = n_top, n_pool = 75, n_total = n_total)
-      })
-      seen <- character(0); genes_ordered <- character(0)
-      for (gv in per_group) {
-        new_g <- gv[!gv %in% seen]
-        genes_ordered <- c(genes_ordered, new_g)
-        seen <- c(seen, new_g)
-      }
-      genes_ordered
-    }
-
-    filter_pct <- function(genes, threshold) {
-      if (threshold == 0 || length(genes) == 0) return(genes)
-      dp <- DotPlot(seu, features = genes, group.by = group_col)$data
-      keep <- dp %>%
-        group_by(features.plot) %>%
-        summarise(max_pct = max(pct.exp), .groups = "drop") %>%
-        filter(max_pct >= threshold) %>%
-        pull(features.plot)
-      genes[genes %in% as.character(keep)]
-    }
-
-    make_label_colors <- function(genes, use_color) {
-      if (!use_color) return(rep("black", length(genes)))
-      sapply(genes, function(g) {
-        cl <- as.character(gene_cluster$cluster[gene_cluster$gene == g][1])
-        if (!is.na(cl) && cl %in% names(colmap)) colmap[[cl]] else "grey50"
-      })
-    }
-
-    make_label_faces <- function(genes, use_color) {
-      if (!use_color) return(rep("plain", length(genes)))
-      ifelse(genes %in% known_markers_vec, "bold", "plain")
-    }
-
-    variants <- list(
-      v1 = list(n_total = 10, color = FALSE, pct = 0,  tag = "top10"),
-      v2 = list(n_total = 10, color = TRUE,  pct = 0,  tag = "top10_color"),
-      v3 = list(n_total = 15, color = TRUE,  pct = 0,  tag = "top15_color"),
-      v4 = list(n_total = 15, color = TRUE,  pct = 25, tag = "top15_color_pct25"),
-      v5 = list(n_total = 15, color = TRUE,  pct = 50, tag = "top15_color_pct50"),
-      v6 = list(n_total = 15, color = TRUE,  pct = 60, tag = "top15_color_pct60")
-    )
-
-    flavors <- list(
-      list(do_scale = FALSE, tag = "noscale",
-           col_scale = scale_color_gradient(low = "grey92", high = "#2500ff",
-                                            name = "Avg Exp")),
-      list(do_scale = TRUE,  tag = "zscore_redblue",
-           col_scale = scale_color_gradient2(low = "#3B4CC0", mid = "white",
-                                             high = "#B40426", midpoint = 0,
-                                             name = "Avg Exp\n(z-score)")),
-      list(do_scale = TRUE,  tag = "zscore_greyblue",
-           col_scale = scale_color_gradient(low = "grey92", high = "#2500ff",
-                                            name = "Avg Exp\n(z-score)"))
-    )
-
-    for (vname in names(variants)) {
-      v     <- variants[[vname]]
-      genes <- get_top(v$n_total)
-      if (v$pct > 0) genes <- filter_pct(genes, v$pct)
-      if (length(genes) == 0) { message("  No genes after pct filter — skipping ", vname); next }
-
-      label_cols  <- make_label_colors(genes, v$color)
-      label_faces <- make_label_faces(genes, v$color)
-      pdf_w       <- max(7, length(genes) * 0.42 + 3)
-
-      for (fl in flavors) {
-        out_pdf <- file.path(SCIB_DIR, paste0(prefix, "_", v$tag, "_", fl$tag, ".pdf"))
-        p <- DotPlot(seu, features = genes, group.by = group_col,
-                     dot.scale = 6, scale = fl$do_scale) +
-          fl$col_scale +
-          scale_size(range = c(0, 6), limits = c(0, 100)) +
-          ggtitle(paste0(prefix, "  [", v$tag, " | ", fl$tag, "]")) +
-          xlab(NULL) + ylab(NULL) +
-          theme_classic(base_size = 11) +
-          theme(axis.text.x  = element_text(angle = 45, hjust = 1, size = 11,
-                                            colour = label_cols, face = label_faces),
-                axis.text.y  = element_text(size = 12),
-                plot.title   = element_text(face = "bold", hjust = 0.5, size = 12),
-                legend.text  = element_text(size = 9),
-                legend.title = element_text(size = 10))
-        pdf(out_pdf, width = pdf_w, height = 3.5)
-        print(p)
-        dev.off()
-        message("    Saved: ", basename(out_pdf))
-      }
-    }
-    invisible(markers)
-  }
-
-  # ── Primary PCa: Benign / nonETS / ERG / ETV (Figure 4c) ─────────────────
-  p1_pca <- subset(p1, subset = Group %in% c("B","BPH","N","PCa"))
-  p1_pca <- subset(p1_pca, subset = etsgroup %in% c("Benign","BPH","nonETS","ERG","ETV"))
-  p1_pca$etsgroup <- as.character(p1_pca$etsgroup)
-  p1_pca$etsgroup[p1_pca$etsgroup == "BPH"] <- "Benign"  # merge BPH with Benign
-  p1_pca$etsgroup <- factor(p1_pca$etsgroup,
-                             levels = names(etsgroup_col)[names(etsgroup_col) %in%
-                                                            unique(p1_pca$etsgroup)])
-
-  make_bubble_plots(p1_pca, "etsgroup", "Fig4c_pseudo_PCa_4grp",
-                    colmap = comp_col, known_markers_vec = known_markers,
-                    grp_known_sets = group_known_sets)
-
-  # ── mCRPC: AR / NEPC / DN (Figure 4d) ────────────────────────────────────
-  p1_mcrpc <- subset(p1, subset = Group %in% c("mCRPC"))
-  p1_mcrpc <- subset(p1_mcrpc, subset = etsgroup %in% c("AR","NEPC","DN"))
-  p1_mcrpc$etsgroup <- factor(p1_mcrpc$etsgroup,
-                               levels = names(etsgroup_col)[names(etsgroup_col) %in%
-                                                              unique(p1_mcrpc$etsgroup)])
-
-  make_bubble_plots(p1_mcrpc, "etsgroup", "Fig4d_pseudo_mCRPC",
-                    colmap = comp_col, known_markers_vec = known_markers,
-                    grp_known_sets = group_known_sets)
-
-  rm(p1, p1_pca, p1_mcrpc); gc()
-}
-
-cat("\nAll figures complete.\n")
-cat("Output directory (all cells): ", PY_FINAL, "\n")
-cat("Output directory (luminal):   ", SCIB_DIR, "\n")

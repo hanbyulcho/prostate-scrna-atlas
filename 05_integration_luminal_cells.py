@@ -10,7 +10,7 @@ Workflow position:
   03_batch_correction_luminal.R → [THIS FILE] → 06_h5ad_to_seurat.R
 
 Input:
-  seu_lum_v1_noNoGroup.h5ad        — exported by 03_batch_correction_luminal.R
+  luminal_cells_raw.h5ad        — exported by 03_batch_correction_luminal.R
     Contains Seurat v5 embeddings from CCA, RPCA, and Harmony integration,
     plus unintegrated PCA. All stored in adata.obsm with Seurat naming:
       X_pca              → renamed to X_pca_unintegrated   (Step 2 below)
@@ -21,7 +21,7 @@ Input:
       X_umap.rpca        → renamed to X_umap_rpca
       X_harmony          → kept as X_harmony
       X_umap.harmony     → renamed to X_umap_harmony
-  seu_lum_v1_noNoGroup_metadata.csv — full obs metadata (re-attached after R export)
+  luminal_cells_metadata.csv — full obs metadata (re-attached after R export)
 
 Parameters (manuscript: luminal cells):
   - 3,000 highly variable genes (batch-aware, Seurat v3 flavor, pseudo-counts)
@@ -47,11 +47,11 @@ Integration methods (8 total):
 Benchmarking: scib-metrics (Luecken et al. 2022, Nat Methods)
   Label key for bio conservation: etsgroup (ETS molecular subgroup)
   Total = 0.4 × Batch correction + 0.6 × Bio conservation
-  Results → scib_results_raw.csv / scib_results_minmax.csv (Supplementary Tables 5, 6)
+  Results → scib_results_raw.csv / scib_results_minmax.csv (Supplementary Tables 6, 7)
 
 Output:
-  seu_lum_v1_noNoGroup_scib_30pc3000g.h5ad      — all embeddings, X = lognorm
-  seu_lum_v1_noNoGroup_metadata.csv             — obs metadata (for 06_h5ad_to_seurat.R)
+  luminal_cells_integrated.h5ad      — all embeddings, X = lognorm
+  luminal_cells_metadata.csv             — obs metadata (for 06_h5ad_to_seurat.R)
   scib_lum_v1_30pc3000g/scib_results_*.csv       — benchmark results
 
 Dependencies: scanpy, scvi-tools, bbknn, scanorama, scib-metrics
@@ -79,9 +79,9 @@ sc.logging.print_header()
 BASE_DIR       = "/mctp/share/users/hanbyul/projects/human_prostate_sc/cellranger_7.1/17datasets/python_final/032025_scib"
 PLOT_DIR       = os.path.join(BASE_DIR, "scib_lum_v1_30pc3000g")
 CHECKPOINT_DIR = os.path.join(BASE_DIR, "checkpoints_lum_v1_30pc3000g")
-H5AD_IN        = os.path.join(BASE_DIR, "seu_lum_v1_noNoGroup.h5ad")         # from 03_batch_correction_luminal.R
-H5AD_OUT       = os.path.join(BASE_DIR, "seu_lum_v1_noNoGroup_scib_30pc3000g.h5ad")
-OBS_CSV        = os.path.join(BASE_DIR, "seu_lum_v1_noNoGroup_metadata.csv")  # full metadata from step 02
+H5AD_IN        = os.path.join(BASE_DIR, "luminal_cells_raw.h5ad")         # from 03_batch_correction_luminal.R
+H5AD_OUT       = os.path.join(BASE_DIR, "luminal_cells_integrated.h5ad")
+OBS_CSV        = os.path.join(BASE_DIR, "luminal_cells_metadata.csv")  # full metadata from step 02
 
 os.makedirs(PLOT_DIR,       exist_ok=True)
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
@@ -379,7 +379,7 @@ fig.savefig(os.path.join(PLOT_DIR, "umap_all_methods.png"), dpi=100, bbox_inches
 plt.close("all")
 
 # =============================================================================
-# Step 9: scib-metrics benchmarking (Figure 5b, d; Supplementary Tables 5, 6)
+# Step 9: scib-metrics benchmarking (Figure 5b, d; Supplementary Tables 6, 7)
 # Label key: etsgroup (ETS molecular subgroup) for bio conservation
 # =============================================================================
 print("\n" + "="*60)
@@ -419,8 +419,8 @@ df_scaled = rename_methods(bm.get_results(min_max_scale=True))
 
 df_raw.to_csv(   os.path.join(PLOT_DIR, "scib_results_raw.csv"))
 df_scaled.to_csv(os.path.join(PLOT_DIR, "scib_results_minmax.csv"))
-print("Saved: scib_results_raw.csv  (Supplementary Table 5)")
-print("Saved: scib_results_minmax.csv  (Supplementary Table 6)")
+print("Saved: scib_results_raw.csv  (Supplementary Table 6)")
+print("Saved: scib_results_minmax.csv  (Supplementary Table 7)")
 print(df_scaled)
 
 for scale, tag in [(False, "_raw"), (True, "_minmax")]:

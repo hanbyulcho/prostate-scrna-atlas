@@ -17,31 +17,31 @@ What this script does:
     1. Load each Cell Ranger v7.1 filtered_feature_bc_matrix.h5 per sample
        (P02/Wong 2022 handled separately using HTO demultiplexing barcodes)
     2. Compute per-cell QC metrics (nCount, nFeature, pct_counts_mt)
-    3. Save pre-filter QC obs table → QC_metrics_raw_prefilter.csv
+    3. Save pre-filter QC obs table → QC_metrics_prefilter.csv
        (used by 05_visualization.R for Supplementary Figure 1a)
     4. Save per-study h5ad files → {study}_combined.h5ad
     5. Concatenate all studies → all_studies_combined.h5ad
 
   Part B — Filter by R cell type annotation:
-    6. Load all_studies_combined.h5ad + metacomb_17data_final.csv (from R step 1)
+    6. Load all_studies_combined.h5ad + all_cells_prefilter_annotation.csv (from R step 1)
     7. Keep only cells present in the annotation table; attach R annotations
     8. Save → merged_a17.h5ad   (all annotated cells, raw counts, all genes)
 
   Part C — Create integration inputs:
     9. Remove low-quality / unannotated cells; remove MT genes
-       → merged_a17_hit1.h5ad   (input for 04_integration_all_cells.py)
+       → all_cells_raw.h5ad   (input for 04_integration_all_cells.py)
     10. Subset to epithelial cells only; strip to bare h5ad (no scale.data)
-        → merged_a17_STRIPPED_lum_v1_noNoGroup.h5ad
-        → obs_metadata_lum_v1_noNoGroup.csv
+        → luminal_cells_raw_stripped.h5ad
+        → luminal_cells_obs_prefilter.csv
         (inputs for 03_batch_correction_luminal.R)
 
 Key output files:
   python/data/{study}_combined.h5ad         — per-study raw h5ad
-  python_final/QC_metrics_raw_prefilter.csv — pre-filter QC metrics (for R plotting)
+  python_final/QC_metrics_prefilter.csv — pre-filter QC metrics (for R plotting)
   python_final/merged_a17.h5ad              — all cells, post annotation merge
-  python_final/merged_a17_hit1.h5ad         — filtered cells, input for all-cells integration
-  python_final/032025_scib/merged_a17_STRIPPED_lum_v1_noNoGroup.h5ad — luminal input for R
-  python_final/032025_scib/obs_metadata_lum_v1_noNoGroup.csv
+  python_final/all_cells_raw.h5ad         — filtered cells, input for all-cells integration
+  python_final/032025_scib/luminal_cells_raw_stripped.h5ad — luminal input for R
+  python_final/032025_scib/luminal_cells_obs_prefilter.csv
 
 Dependencies: scanpy, anndata, pandas, numpy, scipy
 """
@@ -174,7 +174,7 @@ for study in study_ids:
 
 # Save pre-filter QC metrics (used by 05_visualization.R for Supplementary Figure 1a)
 qc_obs = pd.concat(all_qc_dfs, axis=0)
-qc_csv = os.path.join(PY_FINAL, "QC_metrics_raw_prefilter.csv")
+qc_csv = os.path.join(PY_FINAL, "QC_metrics_prefilter.csv")
 qc_obs.to_csv(qc_csv)
 print(f"\nSaved pre-filter QC metrics: {qc_csv}")
 print(f"Total cells before any filtering: {len(qc_obs):,}")
@@ -196,7 +196,7 @@ print(f"Saved: {combined_path}  ({combined.n_obs:,} cells, {combined.n_vars:,} g
 
 # =============================================================================
 # Part B — Filter by R cell type annotation
-# metacomb_17data_final.csv is the cell annotation table exported by
+# all_cells_prefilter_annotation.csv is the cell annotation table exported by
 # 01_QC_and_annotation.R after SingleR + manual curation.
 # Only cells present in this table are kept; all obs columns are replaced
 # with the R annotations.
@@ -205,7 +205,7 @@ print("\n" + "="*60)
 print("Part B: Filter by R annotation → merged_a17.h5ad")
 print("="*60)
 
-cellanno_path = os.path.join(BASE_DIR, "metacomb_17data_final.csv")
+cellanno_path = os.path.join(BASE_DIR, "all_cells_prefilter_annotation.csv")
 cellanno = pd.read_csv(cellanno_path, index_col=0, low_memory=False)
 print(f"R annotation table: {len(cellanno):,} cells")
 
@@ -245,7 +245,7 @@ sc.pp.normalize_total(adata, target_sum=1e4)
 sc.pp.log1p(adata)
 adata.layers["lognorm"] = adata.X.copy()
 
-merged_hit1_path = os.path.join(PY_FINAL, "merged_a17_hit1.h5ad")
+merged_hit1_path = os.path.join(PY_FINAL, "all_cells_raw.h5ad")
 adata.write_h5ad(merged_hit1_path)
 print(f"Saved all-cells input: {merged_hit1_path}  ({adata.n_obs:,} cells)")
 print(f"  → used by 04_integration_all_cells.py")
@@ -261,7 +261,7 @@ lum_adata = lum_adata[~lum_adata.obs["etsgroup"].isin({"No_Group", "", "nan"})].
 print(f"Luminal subset (No_Group removed): {lum_adata.n_obs:,} cells")
 
 # Save full obs metadata as CSV for R to re-attach after h5ad → Seurat conversion
-obs_csv_path = os.path.join(SCIB_DIR, "obs_metadata_lum_v1_noNoGroup.csv")
+obs_csv_path = os.path.join(SCIB_DIR, "luminal_cells_obs_prefilter.csv")
 lum_adata.obs.to_csv(obs_csv_path)
 print(f"Saved obs metadata CSV: {obs_csv_path}")
 
@@ -276,7 +276,7 @@ lum_stripped.layers["lognorm"] = lum_adata.layers["lognorm"].copy()
 lum_stripped.obs_names = lum_adata.obs_names
 lum_stripped.var_names = lum_adata.var_names
 
-stripped_path = os.path.join(SCIB_DIR, "merged_a17_STRIPPED_lum_v1_noNoGroup.h5ad")
+stripped_path = os.path.join(SCIB_DIR, "luminal_cells_raw_stripped.h5ad")
 lum_stripped.write_h5ad(stripped_path)
 print(f"Saved stripped luminal h5ad: {stripped_path}")
 print(f"  → used by 03_batch_correction_luminal.R (CCA / RPCA / Harmony)")

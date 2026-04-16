@@ -20,17 +20,21 @@
 #        (CellAnno resource expanded with Henry et al. normal prostate profiles)
 #     6. Transfer cluster-level labels to individual cells
 #     7. Merge all 17 studies into one Seurat object; export as h5ad
-#        → also export: metacomb_17data_final.csv (cell annotation table used
+#        → also export: all_cells_prefilter_annotation.csv (cell annotation table used
 #          by 02_data_merge_and_filter.py to filter the Python merged object)
 #
 # Key output files:
-#   qc_summary_forsupplementary.csv — per-sample QC metrics (Supplementary Table 2)
-#   metacomb_17data_final.csv       — cell-level annotation table
+#   QC_summary_sample_level.csv — per-sample QC metrics (Supplementary Table 2)
+#   all_cells_prefilter_annotation.csv       — cell-level annotation table
 #   object.h5ad                     — merged Seurat object exported for Python
 #
 # Dependencies: Seurat (v5.1), SingleR, scDblFinder, edgeR, SeuratDisk
 # =============================================================================
 
+a <- readRDS("/mctp/share/users/hanbyul/projects/human_prostate_sc/cellranger_7.1/17datasets/Zenodo_file_submission/all_cells/all_cells_integrated.rds")
+table(a$Paper_ID)
+table(a$final_hit1_group_broad)
+dim(a)
 setwd("/mctp/share/users/hanbyul/projects/human_prostate_sc/cellranger_7.1/17datasets")
 
 options(bitmapType = "cairo")
@@ -318,9 +322,9 @@ qc_summary$GleasonScore <- meta.clean$GleasonScore[match(qc_summary$Sample, meta
 qc_summary$GleasonGrade <- meta.clean$GleasonGrade[match(qc_summary$Sample, meta.clean$sample_id)]
 qc_summary$patient_id   <- meta.clean$patient_id[match(qc_summary$Sample,  meta.clean$sample_id)]
 
-saveRDS(qc_summary, "qc_summary_forsupplementary.rds")
-write.csv(qc_summary, "qc_summary_forsupplementary.csv")
-cat("Saved: qc_summary_forsupplementary.csv\n")
+saveRDS(qc_summary, "QC_summary_sample_level.rds")
+write.csv(qc_summary, "QC_summary_sample_level.csv")
+cat("Saved: QC_summary_sample_level.csv\n")
 
 # =============================================================================
 # Step 3: Per-sample clustering (res=3) for pseudobulk generation
@@ -428,7 +432,7 @@ for (jj in 1:17) {
 
 # =============================================================================
 # Step 6: Merge all 17 studies → export as h5ad for Python pipeline
-# The metacomb_17data_final.csv (cell annotation table) is exported here
+# The all_cells_prefilter_annotation.csv (cell annotation table) is exported here
 # and used by 02_data_merge_and_filter.py to filter the Python merged object.
 # =============================================================================
 cat("\n===== Step 6: Merge and export =====\n")
@@ -458,8 +462,8 @@ obj <- sc.proc(obj, cluster = FALSE, pc = 30, res = 3)
 saveRDS(obj, "obj.split.list.final.cluster.bypatient.rds")
 
 # Export cell annotation table for Python (used in 02_data_merge_and_filter.py)
-write.csv(obj@meta.data, "metacomb_17data_final.csv")
-cat("Saved: metacomb_17data_final.csv\n")
+write.csv(obj@meta.data, "all_cells_prefilter_annotation.csv")
+cat("Saved: all_cells_prefilter_annotation.csv\n")
 
 # Export as h5ad
 object <- obj
