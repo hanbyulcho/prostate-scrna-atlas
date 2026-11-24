@@ -1,0 +1,5 @@
+environment	folder	runtime	bioconductor	packages	files	key_versions
+Python 3.11.1 virtual environment human_sc	python311	Python 3.11.1	-	206 pip distributions	requirements.txt	scanpy 1.11.5; anndata 0.12.4; scvi-tools 1.4.0.post1; scib-metrics 0.5.7; scanorama 1.7.4; bbknn 1.6.0; harmonypy 0.0.9; scArches 0.6.1; torch 2.5.1+cpu; numba 0.62.1; umap-learn 0.5.9.post2; numpy 2.3.4; pandas 2.3.3
+CELLxGENE conversion and validation conda environment cxg-schema	cxg	Python 3.11.17	-	32 conda packages + 56 pip distributions + 4 user-site packages	environment.yml	cellxgene-schema 7.1.1; cellxgene_ontology_guide 1.11.1; anndata 0.11.4; pandas 2.3.3; numpy 2.4.6; h5py 3.16.0
+R 4.3.3 environment	r433	R 4.3.3	3.18	513 packages	renv.lock	SoupX 1.6.2; DropletUtils 1.22.0; scDblFinder 1.16.0; SingleR 2.4.1; Seurat 5.1.0; SeuratObject 5.0.2; DNAcopy 1.76.0; edgeR 4.0.16; e1071 1.7-11
+R 4.4.0 Seurat environment	r440_seurat	R 4.4.0	3.20	407 packages	renv.lock	Seurat 5.1.0; SeuratObject 5.0.2; harmony 1.2.0; SeuratWrappers 0.4.0; SeuratDisk 0.0.0.9021
