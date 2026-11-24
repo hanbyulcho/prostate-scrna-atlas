@@ -46,7 +46,7 @@ Terms used below:
 
 - `01_pseudobulk_v4.R`: sums raw counts into pseudobulks of luminal units and of reference cell groups
 - `02_cnv_v4.R`: infers arm-level copy number
-- `NG_L5_v2.R`: same, for luminal cells outside the first atlas version
+- `NG_L5_v2.R`: same, for luminal cells outside the first atlas version in three samples
 
 **6. Luminal labeling rule** (`07_luminal_labels/`, `r433`)
 
