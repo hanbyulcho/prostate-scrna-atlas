@@ -13,39 +13,73 @@ If you use this code or the data, cite the article and both Zenodo deposits.
 
 ## Scripts
 
-The table lists the scripts in `pipeline/` that are run directly, in run order. Every script in `pipeline/` except `verbatim_functions.R` opens with a header note. Environment names refer to folders in `env/`.
+The scripts in `pipeline/` that are run directly are listed below in run order, grouped by step. Folders are relative to `pipeline/`, and environment names refer to folders in `env/`. Every script except `verbatim_functions.R` opens with a header note.
 
-The re-call is a second cell calling by emptyDrops in four studies (47 samples), on the counts left after swappedDrops removed barcode-swapped molecules. The first atlas version, built before the re-call, is not deposited. A luminal unit is the luminal cells of one cluster in one sample. The curator is the author who decided the labels of flagged clusters, of removed cell groups and of luminal units.
+Terms used below:
 
-| Script | Task | Environment |
-|---|---|---|
-| `02_qc/swap/check_barcode_sharing.py` | Tests excess barcode sharing between GEM wells | Python 3 with h5py and scipy (versions not recorded) |
-| `02_qc/swap/04_swappeddrops_study.R` | Removes barcode-swapped molecules | `r433` |
-| `03_annotation/per_sample/01_qc_doublets.R` | Applies cell QC and calls doublets in one sample (run for L071, L111 and L126) | `r433` |
-| `03_annotation/per_sample/02_cluster_annotate.R` | Clusters one sample and labels the clusters with SingleR, for L071, L111 and L126 (loads `verbatim_functions.R` and `helpers.R`) | `r433` |
-| `02_qc/recall/03_recall_qc_classify.R` | Applies the re-calls and cell QC | `r433` |
-| `02_qc/recall/04_doublets_cluster_annotate.R` | Calls doublets, then clusters and labels the re-called cells of each sample | `r433` |
-| `02_qc/recall/04b_restored_cells.R` | Same, for samples with cells that the first atlas version removed and the curator restored | `r433` |
-| `02_qc/soupx/01_soupx_unit.R` | Estimates the ambient-RNA fraction (SoupX) without correcting counts | `r433` |
-| `08_copy_number/arms/01_pseudobulk_v4.R` | Sums raw counts into pseudobulks of luminal units and of reference cell groups | `r433` |
-| `08_copy_number/arms/02_cnv_v4.R` | Infers arm-level copy number | `r433` |
-| `08_copy_number/arms/NG_L5_v2.R` | Same, for luminal cells outside the first atlas version | `r433` |
-| `07_luminal_labels/R_rules_v9.R` | Applies the luminal labeling rule | `r433` |
-| `05_integration/allcells/03_run_python_integration.py` | Integrates all cells and runs scib-metrics (loads `umap_sigma_fix.py`) | `python311` |
-| `05_integration/luminal/02_r_seurat_luminal.R` | Runs Seurat CCA, RPCA and Harmony | `r440_seurat` |
-| `05_integration/luminal/03_run_python_integration.py` | Integrates luminal cells and runs scib-metrics (loads `umap_sigma_fix.py`) | `python311` |
-| `07_luminal_labels/label_transfer/S1_soft_knn_primary_v1.py` | Transfers labels by scArches weighted kNN (loads `lu_common_v1.py`) | `python311` |
-| `06_benchmark/R1_rescore_scib.py` | Scores the stored luminal embeddings on the deposited `luminal_subgroup` labels (loads `umap_sigma_fix.py`). The means of its seed 0 and seed 1 scores are in the data deposit's `scib_luminal_raw.csv` | `python311` |
-| `06_benchmark/04_scib_tables_figures.py` | Makes the score tables and diagnostic plots | `python311` |
-| `13_cellxgene/convert_to_cellxgene.py` | Converts the all-cell and luminal objects to CELLxGENE schema 7.1.0 (loads `cxg_mappings.py`) | `cxg` |
+- **Re-call:** a second cell calling by emptyDrops in four studies (47 samples), on the counts left after swappedDrops removed barcode-swapped molecules
+- **First atlas version:** the atlas built before the re-call (not deposited)
+- **Luminal unit:** the luminal cells of one cluster in one sample
+- **Curator:** the author who decided the labels of flagged clusters, of removed cell groups and of luminal units
 
-`verbatim_functions.R` holds three functions copied unchanged from the first atlas version. `helpers.R` and Sheet1 of `celltype_colorcode_update_17papers.xlsx` turn SingleR labels into atlas cell types. `umap_sigma_fix.py` corrects a sigma = inf from umap-learn 0.5.9.post2 with numba 0.62.1. Uncorrected, this value would distort the UMAPs, BBKNN graphs and kBET scores.
+**1. Barcode swapping** (`02_qc/swap/`)
 
-For release, we edited only text, such as comments, messages, file names, paths and text written into outputs. These edits change no cell's label and do not change which cells are kept or removed.
+- `check_barcode_sharing.py`: tests excess barcode sharing between GEM wells (Python 3 with h5py and scipy, versions not recorded)
+- `04_swappeddrops_study.R`: removes barcode-swapped molecules (`r433`)
 
-Paths to the authors' system begin with a placeholder, such as `<PROJECT_DIR>`, or with a folder set in a `00_env.R` file (not included). `<LEIDEN_ENV>` is the folder of a conda environment with leidenalg 0.10.2 and python-igraph 0.11.8, which `env/` does not record.
+**2. Per-sample QC and labels, run for L071, L111 and L126** (`03_annotation/per_sample/`, `r433`)
 
-`04_doublets_cluster_annotate.R` and `04b_restored_cells.R` check the md5 of `verbatim_functions.R`. To run them with the released file, replace 35609a43c33765adf8123294db7914da with 568d299a151c8e1b1e0a5ed9ed189c41 in both.
+- `01_qc_doublets.R`: applies cell QC and calls doublets in one sample
+- `02_cluster_annotate.R`: clusters one sample and labels the clusters with SingleR (loads `verbatim_functions.R` and `helpers.R`)
+
+**3. Re-call** (`02_qc/recall/`, `r433`)
+
+- `03_recall_qc_classify.R`: applies the re-calls and cell QC
+- `04_doublets_cluster_annotate.R`: calls doublets, then clusters and labels the re-called cells of each sample
+- `04b_restored_cells.R`: same, for samples with cells that the first atlas version removed and the curator restored
+
+**4. Ambient RNA** (`02_qc/soupx/`, `r433`)
+
+- `01_soupx_unit.R`: estimates the ambient-RNA fraction (SoupX) without correcting counts
+
+**5. Copy number** (`08_copy_number/arms/`, `r433`)
+
+- `01_pseudobulk_v4.R`: sums raw counts into pseudobulks of luminal units and of reference cell groups
+- `02_cnv_v4.R`: infers arm-level copy number
+- `NG_L5_v2.R`: same, for luminal cells outside the first atlas version
+
+**6. Luminal labeling rule** (`07_luminal_labels/`, `r433`)
+
+- `R_rules_v9.R`: applies the luminal labeling rule
+
+**7. Integration** (`05_integration/`)
+
+- `allcells/03_run_python_integration.py`: integrates all cells and runs scib-metrics (`python311`, loads `umap_sigma_fix.py`)
+- `luminal/02_r_seurat_luminal.R`: runs Seurat CCA, RPCA and Harmony (`r440_seurat`)
+- `luminal/03_run_python_integration.py`: integrates luminal cells and runs scib-metrics (`python311`, loads `umap_sigma_fix.py`)
+
+**8. Label transfer** (`07_luminal_labels/label_transfer/`, `python311`)
+
+- `S1_soft_knn_primary_v1.py`: transfers labels by scArches weighted kNN (loads `lu_common_v1.py`)
+
+**9. Benchmark** (`06_benchmark/`, `python311`)
+
+- `R1_rescore_scib.py`: scores the stored luminal embeddings on the deposited `luminal_subgroup` labels (loads `umap_sigma_fix.py`). The data deposit's `scib_luminal_raw.csv` holds the means of this script's seed 0 and seed 1 scores.
+- `04_scib_tables_figures.py`: makes the score tables and diagnostic plots
+
+**10. CELLxGENE conversion** (`13_cellxgene/`, `cxg`)
+
+- `convert_to_cellxgene.py`: converts the all-cell and luminal objects to CELLxGENE schema 7.1.0 (loads `cxg_mappings.py`)
+
+### Notes
+
+- `verbatim_functions.R` holds three functions copied unchanged from the first atlas version.
+- `helpers.R` and Sheet1 of `celltype_colorcode_update_17papers.xlsx` turn SingleR labels into atlas cell types.
+- `umap_sigma_fix.py` corrects a sigma = inf from umap-learn 0.5.9.post2 with numba 0.62.1. Uncorrected, this value would distort the UMAPs, BBKNN graphs and kBET scores.
+- For release, we edited only text, such as comments, messages, file names, paths and text written into outputs. These edits change no cell's label and do not change which cells are kept or removed.
+- Paths to the authors' system begin with a placeholder, such as `<PROJECT_DIR>`, or with a folder set in a `00_env.R` file (not included).
+- `<LEIDEN_ENV>` is the folder of a conda environment with leidenalg 0.10.2 and python-igraph 0.11.8, which `env/` does not record.
+- `04_doublets_cluster_annotate.R` and `04b_restored_cells.R` check the md5 of `verbatim_functions.R`. To run them with the released file, replace 35609a43c33765adf8123294db7914da with 568d299a151c8e1b1e0a5ed9ed189c41 in both.
 
 ## Not included
 
