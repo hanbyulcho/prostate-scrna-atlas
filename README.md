@@ -6,7 +6,7 @@ This repository holds the code of the main processing steps that made the atlas 
 
 - Article: Data Descriptor submitted to Scientific Data.
 - Data: Zenodo, https://doi.org/10.5281/zenodo.19500694.
-- Code: release v1.0 of this repository, archived at Zenodo.
+- Code: release v1.0.1 of this repository, archived at Zenodo.
 - Repository: https://github.com/hanbyulcho/prostate-scrna-atlas
 
 If you use this code or the data, cite the article and both Zenodo deposits.
@@ -50,6 +50,7 @@ Terms used below:
 
 **6. Luminal labeling rule** (`07_luminal_labels/`, `r433`)
 
+- `ar_ne_codetection.R`: computes the fraction of each mCRPC unit's cells with AR or KLK3 detected together with CHGA, CHGB or SYP (co-detection)
 - `R_rules_v9.R`: applies the luminal labeling rule
 
 **7. Integration** (`05_integration/`)
@@ -76,7 +77,8 @@ Terms used below:
 - `verbatim_functions.R` holds three functions copied unchanged from the first atlas version.
 - `helpers.R` and Sheet1 of `celltype_colorcode_update_17papers.xlsx` turn SingleR labels into atlas cell types.
 - `umap_sigma_fix.py` corrects a sigma = inf from umap-learn 0.5.9.post2 with numba 0.62.1. Uncorrected, this value would distort the UMAPs, BBKNN graphs and kBET scores.
-- For release, we edited only text, such as comments, messages, file names, paths and text written into outputs. These edits change no cell's label and do not change which cells are kept or removed.
+- For release v1.0, we edited only text, such as comments, messages, file names, paths and text written into outputs. These edits change no cell's label and do not change which cells are kept or removed.
+- Release v1.0.1 changes copy-number reference option b of `02_cnv_v4.R` and `NG_L5_v2.R` to include the unit's own donor. This changes no released `luminal_subgroup`, `nonets_tier` or `luminal_label_flag` value. Release v1.0.1 also corrects the 3' v2 median UMI cutoff in a comment of `R_rules_v9.R` to 988.9, as used for the released labels. It also makes `R_rules_v9.R` set the groups AR+NE+ (co-detection in over half of an AR+/NE+ candidate unit's cells) and DN. This also changes no released value.
 - Paths to the authors' system begin with a placeholder, such as `<PROJECT_DIR>`, or with a folder set in a `00_env.R` file (not included).
 - `<LEIDEN_ENV>` is the folder of a conda environment with leidenalg 0.10.2 and python-igraph 0.11.8, which `env/` does not record.
 - `04_doublets_cluster_annotate.R` and `04b_restored_cells.R` check the md5 of `verbatim_functions.R`. To run them with the released file, replace 35609a43c33765adf8123294db7914da with 568d299a151c8e1b1e0a5ed9ed189c41 in both.

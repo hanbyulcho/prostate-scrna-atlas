@@ -2,7 +2,7 @@
 # Input: the outputs of 01_pseudobulk_v4.R, sample_metadata.csv, gene positions, hg38 cytobands and the Chan et al. 2022 alteration table.
 # Output: arm_values_full_v4.csv.gz, plus locus values, half-split arm values and other tables.
 # Per unit: log2(CPM + 1) after TMM, genes above 2 in unit and reference, log ratio clipped to [-3, 3] and median-centered, then DNAcopy (set.seed(1)).
-# Arm value: mean segment value over the arm's genes, missing below 20 genes. ref_ids() defines four reference options. The labeling rule uses option b: benign luminal pseudobulks with 50 or more luminal cells, of other donors with the same chemistry.
+# Arm value: mean segment value over the arm's genes, missing below 20 genes. ref_ids() defines four reference options. The labeling rule uses option b: benign luminal pseudobulks with 50 or more luminal cells and the same chemistry, own donor included.
 # 02_cnv_v4.R
 # Variant P: TMM log2(CPM+1); genes > 2 in unit and reference; log ratio clipped +-3; median-centered; DNAcopy smooth.CNA + segment (defaults; set.seed(1));
 # arm value = gene-weighted mean of segment means (>= 20 genes). All D4 and D3 units under options a-d; all D4 half-splits.
@@ -45,7 +45,7 @@ print(U[, .N, by = .(definition, class)][order(definition, class)]); stopifnot(!
 libl <- META[kind == "lib_luminal" & n_cells >= 50]
 ref_ids <- function(u, opt) {
   if (opt == "a") return(META[kind == "nonepi_celltype" & library == u$library]$pb_id)
-  if (opt == "b") { if (is.na(u$chem_group) || u$chem_group == "") return(character(0)); return(libl[disease_state == "benign" & chem_group == u$chem_group & pkey != u$pkey]$pb_id) }
+  if (opt == "b") { if (is.na(u$chem_group) || u$chem_group == "") return(character(0)); return(libl[disease_state == "benign" & chem_group == u$chem_group]$pb_id) }
   if (opt == "c") return(libl[library %in% YOUNG & pkey != u$pkey]$pb_id)
   if (opt == "d") return(libl[pkey == u$pkey & library != u$library & disease_state %in% c("benign","normal","BPH")]$pb_id) }
 JOBS <- rbindlist(lapply(seq_len(nrow(U)), function(i) rbindlist(lapply(c("a","b","c","d"), function(o) {
